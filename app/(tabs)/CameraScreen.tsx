@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, Alert, Image } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 
 export default function App() {
@@ -9,9 +9,13 @@ export default function App() {
   const [attendanceMessage, setAttendanceMessage] = useState<string | null>(null);
   const cameraRef = useRef<any>(null);
 
-  const toggleCameraFacing = () => {
-    setFacing(current => (current === 'back' ? 'front' : 'back'));
-  };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      captureImage();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const captureImage = async () => {
     if (cameraRef.current) {
@@ -35,11 +39,7 @@ export default function App() {
 
         try {
           const parsedData = JSON.parse(responseData);
-          if (response.ok) {
-            setAttendanceMessage(parsedData.message);
-          } else {
-            setAttendanceMessage(parsedData.message || 'Upload failed');
-          }
+          setAttendanceMessage(parsedData.message || 'Upload failed');
         } catch (parseError) {
           console.error('Parsing error:', parseError);
           Alert.alert('Error', 'Unable to parse server response');
@@ -59,9 +59,7 @@ export default function App() {
     return (
       <View style={styles.container}>
         <Text style={styles.text}>We need your permission to show the camera</Text>
-        <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-          <Text style={styles.buttonText}>Grant Permission</Text>
-        </TouchableOpacity>
+        <Text onPress={requestPermission} style={styles.permissionText}>Grant Permission</Text>
       </View>
     );
   }
@@ -72,24 +70,7 @@ export default function App() {
         style={styles.camera}
         facing={facing}
         ref={cameraRef}
-      >
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.flipButton}
-            onPress={toggleCameraFacing}
-          >
-            <Text style={styles.buttonText}>Flip</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.captureButton}
-            onPress={captureImage}
-          >
-            <Text style={styles.buttonText}>Capture</Text>
-          </TouchableOpacity>
-        </View>
-      </CameraView>
-
+      />
       {capturedImage && (
         <View style={styles.previewContainer}>
           <Text style={styles.attendanceMessage}>{attendanceMessage}</Text>
@@ -111,29 +92,6 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    margin: 20,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  flipButton: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    padding: 15,
-    borderRadius: 10,
-  },
-  captureButton: {
-    backgroundColor: 'rgba(255,0,0,0.7)',
-    padding: 15,
-    borderRadius: 10,
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
   previewContainer: {
     position: 'absolute',
     top: 20,
@@ -152,10 +110,9 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 10,
   },
-  permissionButton: {
-    backgroundColor: 'blue',
-    padding: 15,
-    borderRadius: 10,
+  permissionText: {
+    color: 'blue',
+    textAlign: 'center',
     marginTop: 10,
   },
   text: {
