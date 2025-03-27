@@ -23,12 +23,12 @@ export default function AttendanceLogsScreen() {
   const renderItem = ({ item }) => (
     <View style={styles.attendanceItem}>
       <Image
-        source={{ uri: `http://localhost:3001/students/${item.student.imagePath.split('/').pop()}` }}
+        source={{ uri: `http://localhost:3001/students/${item?.student?.imagePath.split('/').pop()}` }}
         style={styles.studentImage}
         resizeMode="cover"
       />
       <View style={styles.studentInfo}>
-        <Text style={styles.studentName}>{item.student.name}</Text>
+        <Text style={styles.studentName}>{item?.student?.name}</Text>
         <Text style={styles.attendanceDate}>{new Date(item.date).toLocaleString()}</Text>
       </View>
     </View>
