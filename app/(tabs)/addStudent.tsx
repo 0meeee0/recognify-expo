@@ -138,7 +138,7 @@ export default function StudentCreationForm() {
                 onPress={pickImage} 
                 style={styles.imagePlaceholder}
               >
-                <Ionicons name="camera-outline" size={40} color="#3a86ff" />
+                {/* <Ionicons name="camera-outline" size={40} color="#3a86ff" /> */}
                 <Text style={styles.imagePlaceholderText}>Tap to select photo</Text>
               </TouchableOpacity>
             ) : (
@@ -166,7 +166,7 @@ export default function StudentCreationForm() {
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <>
-                <Ionicons name="person-add" size={20} color="#FFFFFF" style={styles.buttonIcon} />
+                {/* <Ionicons name="person-add" size={20} color="#FFFFFF" style={styles.buttonIcon} /> */}
                 <Text style={styles.submitButtonText}>Register Student</Text>
               </>
             )}
