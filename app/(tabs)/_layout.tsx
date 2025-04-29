@@ -11,6 +11,8 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
+  const token = localStorage.getItem('token')
+
   return (
     <Tabs
       screenOptions={{
@@ -20,10 +22,12 @@ export default function TabLayout() {
         tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
           ios: {
-            // Use a transparent background on iOS to show the blur effect
             position: 'absolute',
+            display: token ? 'flex' : 'none',
           },
-          default: {},
+          default: {
+            display: token ? 'flex' : 'none',
+          },
         }),
       }}>
       <Tabs.Screen
