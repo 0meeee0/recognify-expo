@@ -1,147 +1,163 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Image, Dimensions } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useRef } from 'react';
+import {
+  View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
+  TextInput, Alert, Image
+} from 'react-native';
+import { CameraView } from 'expo-camera';
+import { router } from 'expo-router';
 
-const LandingPage = () => {
-    const navigation = useNavigation();
+const LoginPage = ({ navigation }: any) => {
+  const [name, setName] = useState('');
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const cameraRef = useRef<any>(null);
 
+  const handleLogin = async () => {
+    if (!name.trim()) return Alert.alert('Error', 'Please enter your name');
+
+    try {
+      setLoading(true);
+
+      const photo = await cameraRef.current?.takePictureAsync();
+      if (!photo?.uri) throw new Error('Failed to capture image');
+      setCapturedImage(photo.uri);
+
+      const blob = await fetch(photo.uri).then(res => res.blob());
+      const file = new File([blob], 'face.jpg', { type: 'image/jpeg' });
+
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('image', file);
+
+      const res = await fetch('http://localhost:3001/api/auth/face-auth', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || 'Login failed');
+
+      // Save token or user info
+      await localStorage.setItem('user', JSON.stringify(data));
+      await localStorage.setItem('token', JSON.stringify(data.token));
+      Alert.alert('Success', 'Logged in successfully');
+      router.push("/(tabs)/explore");
+    } catch (err: any) {
+      Alert.alert('Login Error', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const token = localStorage.getItem('token')
+  const user = localStorage.getItem('user')
+
+  if (token) {
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.content}>
-                <View style={styles.header}>
-                    <Text style={styles.logo}>Recognify</Text>
-                    <Text style={styles.tagline}>Smart Attendance. Smarter Campus.</Text>
-                </View>
-                
-                <View style={styles.imageContainer}>
-                    <Image 
-                        source={require('../../assets/images/hat.png')}
-                        style={styles.image} 
-                        resizeMode="contain"
-                    />
-                </View>
-                
-                <View style={styles.textContainer}>
-                    <Text style={styles.title}>Attendance Made Simple</Text>
-                    <Text style={styles.description}>
-                        Revolutionize your classroom with our advanced facial recognition system. 
-                        Recognify uses cutting-edge DeepFace technology to automate attendance tracking, 
-                        saving time and improving accuracy.
-                    </Text>
-                </View>
-                
-                <View style={styles.buttonContainer}>
-                    <TouchableOpacity
-                        style={styles.primaryButton}
-                        onPress={() => navigation.navigate('CameraScreen')}>
-                        <Text style={styles.primaryButtonText}>Take Attendance</Text>
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity
-                        style={styles.secondaryButton}
-                        onPress={() => navigation.navigate('addStudent')}>
-                        <Text style={styles.secondaryButtonText}>Register New Student</Text>
-                    </TouchableOpacity>
-                </View>
-                
-                <Text style={styles.footer}>
-                    Powered by DeepFace & Express
-                </Text>
-            </View>
-        </SafeAreaView>
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.title}>{JSON.parse(user)?.message}</Text>
+      </SafeAreaView>
     );
+  }
+  
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>Recognify Login</Text>
+
+      <TextInput
+        placeholder="Enter your name"
+        style={styles.input}
+        value={name}
+        onChangeText={setName}
+      />
+
+      <CameraView style={styles.camera} ref={cameraRef} facing="front" />
+
+      {capturedImage && (
+        <Image source={{ uri: capturedImage }} style={styles.preview} />
+      )}
+
+      <TouchableOpacity
+        style={[styles.loginButton, loading && styles.loadingButton]}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Login with Face'}</Text>
+      </TouchableOpacity>
+    </SafeAreaView>
+  );
 };
 
-const { width } = Dimensions.get('window');
-
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f8f9fa',
-    },
-    content: {
-        flex: 1,
-        padding: 24,
-        justifyContent: 'space-between',
-    },
-    header: {
-        alignItems: 'center',
-        marginTop: 20,
-    },
-    logo: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: '#3a86ff',
-        letterSpacing: 1,
-    },
-    tagline: {
-        fontSize: 16,
-        color: '#6c757d',
-        marginTop: 4,
-    },
-    imageContainer: {
-        alignItems: 'center',
-        marginVertical: 30,
-    },
-    image: {
-        width: width * 0.7,
-        height: width * 0.7,
-    },
-    textContainer: {
-        marginBottom: 30,
-    },
-    title: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#212529',
-        textAlign: 'center',
-        marginBottom: 16,
-    },
-    description: {
-        fontSize: 16,
-        lineHeight: 24,
-        color: '#495057',
-        textAlign: 'center',
-    },
-    buttonContainer: {
-        marginBottom: 30,
-    },
-    primaryButton: {
-        backgroundColor: '#3a86ff',
-        paddingVertical: 16,
-        borderRadius: 12,
-        alignItems: 'center',
-        marginBottom: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    primaryButtonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    secondaryButton: {
-        backgroundColor: '#ffffff',
-        paddingVertical: 16,
-        borderRadius: 12,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#3a86ff',
-    },
-    secondaryButtonText: {
-        color: '#3a86ff',
-        fontSize: 18,
-        fontWeight: '600',
-    },
-    footer: {
-        textAlign: 'center',
-        color: '#adb5bd',
-        fontSize: 14,
-        marginBottom: 10,
-    }
+  container: {
+    flex: 1,
+    padding: 24,
+    justifyContent: 'center',
+    backgroundColor: '#f9f9f9',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 40,
+    color: '#333',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#e1e1e1',
+    padding: 14,
+    borderRadius: 20,
+    marginBottom: 30,
+    backgroundColor: '#fff',
+    fontSize: 16,
+    color: '#333',
+    shadowColor: '#aaa',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  camera: {
+    width: '100%',
+    height: 300,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: 30,
+    borderWidth: 2,
+    borderColor: '#ddd',
+  },
+  preview: {
+    width: 120,
+    height: 120,
+    marginVertical: 20,
+    alignSelf: 'center',
+    borderRadius: 15,
+    borderWidth: 4,
+    borderColor: '#4a90e2',
+  },
+  loginButton: {
+    backgroundColor: '#4a90e2',
+    padding: 18,
+    borderRadius: 25,
+    alignItems: 'center',
+    marginTop: 30,
+    shadowColor: '#4a90e2',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 5,
+    transition: 'background-color 0.3s',
+  },
+  loadingButton: {
+    backgroundColor: '#7b9eaf',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
 });
 
-export default LandingPage;
+export default LoginPage;
